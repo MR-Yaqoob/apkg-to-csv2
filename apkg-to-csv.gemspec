@@ -33,7 +33,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.bindir = 'bin'
   spec.executables = ['apkg-to-csv']
-
+  spec.add_runtime_dependency "sinatra"
   spec.add_dependency 'rubyzip', '~> 2.3'
   spec.add_dependency 'sqlite3', '~> 1.6'
 end
