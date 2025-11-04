@@ -8,24 +8,32 @@ configure do
   enable :cross_origin
   set :bind, "0.0.0.0"
   set :port, ENV["PORT"] || 4567
+
+  # Configure allowed origins properly
+  set :allow_origin, "https://quizy2.vercel.app"
+  set :allow_methods, [:get, :post, :options]
+  set :allow_headers, ["Content-Type", "Accept", "Authorization", "Token"]
 end
 
 register Sinatra::CrossOrigin
 
 before do
-  response.headers['Access-Control-Allow-Origin'] = '*' # Allow all origins
+  response.headers["Access-Control-Allow-Origin"] = "https://quizy2.vercel.app"
+  response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+  response.headers["Access-Control-Allow-Headers"] = "Content-Type, Accept, Authorization, Token"
 end
 
 options "*" do
   response.headers["Allow"] = "HEAD,GET,POST,OPTIONS"
+  response.headers["Access-Control-Allow-Origin"] = "https://quizy2.vercel.app"
   response.headers["Access-Control-Allow-Headers"] = "Content-Type, Accept, Authorization, Token"
-  response.headers["Access-Control-Allow-Origin"] = "*"
   200
 end
 
 # Make sure this route matches exactly what you call from frontend
 post "/parse" do
   cross_origin
+
   unless params[:file]
     halt 400, { error: "No file uploaded" }.to_json
   end
