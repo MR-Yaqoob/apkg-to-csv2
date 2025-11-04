@@ -10,36 +10,35 @@ configure do
   set :port, ENV["PORT"] || 4567
 end
 
-# Register cross_origin properly
 register Sinatra::CrossOrigin
 
-# Allow all origins
 before do
-  response.headers['Access-Control-Allow-Origin'] = '*'
+  response.headers['Access-Control-Allow-Origin'] = '*' # Allow all origins
 end
 
-# Preflight OPTIONS requests
 options "*" do
-  response.headers["Allow"] = "HEAD,GET,POST,OPTIONS"]
+  response.headers["Allow"] = "HEAD,GET,POST,OPTIONS"
   response.headers["Access-Control-Allow-Headers"] = "Content-Type, Accept, Authorization, Token"
   response.headers["Access-Control-Allow-Origin"] = "*"
   200
 end
 
+# Make sure this route matches exactly what you call from frontend
 post "/parse" do
-  cross_origin # Enable CORS for this route
-
+  cross_origin
   unless params[:file]
     halt 400, { error: "No file uploaded" }.to_json
   end
 
-  FileUtils.mkdir_p("./tmp")
+  FileUtils.mkdir_p("/tmp") # Use absolute path for Railway
+
   tempfile = params[:file][:tempfile]
-  output_path = "./tmp/deck_#{Time.now.to_i}.csv"
+  output_path = "/tmp/deck_#{Time.now.to_i}.csv"
 
-  system("apkg-to-csv #{tempfile.path} > #{output_path}")
+  # Run conversion safely
+  result = system("apkg-to-csv #{tempfile.path} > #{output_path}")
 
-  unless File.exist?(output_path)
+  unless result && File.exist?(output_path)
     halt 500, { error: "Conversion failed" }.to_json
   end
 
