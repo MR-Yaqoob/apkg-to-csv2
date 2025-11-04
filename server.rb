@@ -9,10 +9,12 @@ configure do
   set :bind, "0.0.0.0"
   set :port, ENV["PORT"] || 4567
 
-  # Configure allowed origins properly
-  set :allow_origin, "https://quizy2.vercel.app"
+  # Sinatra CrossOrigin settings
+  set :allow_origin, :any
   set :allow_methods, [:get, :post, :options]
-  set :allow_headers, ["Content-Type", "Accept", "Authorization", "Token"]
+  set :allow_credentials, true
+  set :max_age, "1728000"
+  set :allow_headers, ["*", "Content-Type", "Accept", "Authorization", "Token"]
 end
 
 register Sinatra::CrossOrigin
@@ -21,29 +23,32 @@ before do
   response.headers["Access-Control-Allow-Origin"] = "https://quizy2.vercel.app"
   response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
   response.headers["Access-Control-Allow-Headers"] = "Content-Type, Accept, Authorization, Token"
+  response.headers["Access-Control-Allow-Credentials"] = "true"
 end
 
+# ✅ Handle CORS preflight requests properly
 options "*" do
   response.headers["Allow"] = "HEAD,GET,POST,OPTIONS"
   response.headers["Access-Control-Allow-Origin"] = "https://quizy2.vercel.app"
+  response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
   response.headers["Access-Control-Allow-Headers"] = "Content-Type, Accept, Authorization, Token"
+  response.headers["Access-Control-Allow-Credentials"] = "true"
   200
 end
 
-# Make sure this route matches exactly what you call from frontend
+# ✅ Actual endpoint
 post "/parse" do
-  cross_origin
+  cross_origin # ensure CORS headers are added
 
   unless params[:file]
     halt 400, { error: "No file uploaded" }.to_json
   end
 
-  FileUtils.mkdir_p("/tmp") # Use absolute path for Railway
+  FileUtils.mkdir_p("/tmp")
 
   tempfile = params[:file][:tempfile]
   output_path = "/tmp/deck_#{Time.now.to_i}.csv"
 
-  # Run conversion safely
   result = system("apkg-to-csv #{tempfile.path} > #{output_path}")
 
   unless result && File.exist?(output_path)
